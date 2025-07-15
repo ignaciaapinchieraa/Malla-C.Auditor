@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malla Interactiva - Contador Auditor</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .malla {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+    .semestre {
+      border: 1px solid #ccc;
+      background: white;
+      padding: 10px;
+      margin: 10px;
+      width: 240px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .semestre h2 {
+      font-size: 16px;
+      text-align: center;
+    }
+    .ramo {
+      background-color: pink;
+      border: 1px solid #999;
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+    }
+    .ramo.bloqueado {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+    .ramo.aprobado {
+      background-color: #a259ff;
+      color: white;
+      text-decoration: line-through;
+    }
+    .codigo {
+      font-weight: bold;
+      display: block;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Interactiva - Contador Auditor</h1>
+  <div class="malla">
+
+    <!-- PRIMER AÑO - SEMESTRE I -->
+    <div class="semestre" id="semestre-1">
+      <h2>1° Semestre</h2>
+      <div class="ramo" id="CAU001" data-nombre="Inglés Nivel 1" data-codigo="CAU001" data-prerrequisitos="">
+        <span class="codigo">CAU001</span>
+        <span class="nombre">Inglés Nivel 1</span>
+      </div>
+      <div class="ramo" id="CAU003" data-nombre="Matemática" data-codigo="CAU003" data-prerrequisitos="">
+        <span class="codigo">CAU003</span>
+        <span class="nombre">Matemática</span>
+      </div>
+      <div class="ramo" id="CAU004" data-nombre="Administración" data-codigo="CAU004" data-prerrequisitos="">
+        <span class="codigo">CAU004</span>
+        <span class="nombre">Administración</span>
+      </div>
+      <div class="ramo" id="CAU005" data-nombre="Contabilidad I" data-codigo="CAU005" data-prerrequisitos="">
+        <span class="codigo">CAU005</span>
+        <span class="nombre">Contabilidad I</span>
+      </div>
+      <div class="ramo" id="CAU006" data-nombre="Taller de Habilidades Comunicativas" data-codigo="CAU006" data-prerrequisitos="">
+        <span class="codigo">CAU006</span>
+        <span class="nombre">Taller de Habilidades Comunicativas</span>
+      </div>
+    </div>
+
+    <!-- PRIMER AÑO - SEMESTRE II -->
+    <div class="semestre" id="semestre-2">
+      <h2>2° Semestre</h2>
+      <div class="ramo" id="CAU007" data-nombre="Inglés Nivel 2" data-codigo="CAU007" data-prerrequisitos="CAU001">
+        <span class="codigo">CAU007</span>
+        <span class="nombre">Inglés Nivel 2</span>
+      </div>
+      <div class="ramo" id="CAU008" data-nombre="Estadística I" data-codigo="CAU008" data-prerrequisitos="CAU003">
+        <span class="codigo">CAU008</span>
+        <span class="nombre">Estadística I</span>
+      </div>
+      <div class="ramo" id="CAU009" data-nombre="Economía" data-codigo="CAU009" data-prerrequisitos="">
+        <span class="codigo">CAU009</span>
+        <span class="nombre">Economía</span>
+      </div>
+      <div class="ramo" id="CAU010" data-nombre="Contabilidad II" data-codigo="CAU010" data-prerrequisitos="CAU005">
+        <span class="codigo">CAU010</span>
+        <span class="nombre">Contabilidad II</span>
+      </div>
+      <div class="ramo" id="CAU011" data-nombre="Taller de Desarrollo Personal" data-codigo="CAU011" data-prerrequisitos="">
+        <span class="codigo">CAU011</span>
+        <span class="nombre">Taller de Desarrollo Personal</span>
+      </div>
+    </div>
+
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const ramos = document.querySelectorAll(".ramo");
+
+    const estadoRamos = JSON.parse(localStorage.getItem("estadoRamos")) || {};
+
+    function actualizarEstadoVisual() {
+      ramos.forEach(ramo => {
+        const id = ramo.id;
+        const aprobado = estadoRamos[id];
+        const prerreqs = ramo.dataset.prerrequisitos.split(',').filter(Boolean);
+
+        ramo.classList.remove("aprobado", "bloqueado");
+
+        const prerreqsCumplidos = prerreqs.every(p => estadoRamos[p]);
+
+        if (!prerreqsCumplidos && prerreqs.length > 0) {
+          ramo.classList.add("bloqueado");
+        } else if (aprobado) {
+          ramo.classList.add("aprobado");
+        }
+      });
+    }
+
+    function guardarEstado() {
+      localStorage.setItem("estadoRamos", JSON.stringify(estadoRamos));
+    }
+
+    ramos.forEach(ramo => {
+      ramo.addEventListener("click", () => {
+        if (ramo.classList.contains("bloqueado")) return;
+
+        const id = ramo.id;
+        estadoRamos[id] = !estadoRamos[id];
+        guardarEstado();
+        actualizarEstadoVisual();
+      });
+    });
+
+    function dibujarLineas() {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = document.body.scrollWidth;
+      canvas.height = document.body.scrollHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#888";
+      ctx.lineWidth = 2;
+
+      ramos.forEach(ramo => {
+        const id = ramo.id;
+        const prerreqs = ramo.dataset.prerrequisitos.split(',').filter(Boolean);
+        const rect1 = ramo.getBoundingClientRect();
+
+        prerreqs.forEach(pr => {
+          const prereqEl = document.getElementById(pr);
+          if (prereqEl) {
+            const rect2 = prereqEl.getBoundingClientRect();
+
+            ctx.beginPath();
+            ctx.moveTo(rect2.left + rect2.width / 2, rect2.bottom + window.scrollY);
+            ctx.lineTo(rect1.left + rect1.width / 2, rect1.top + window.scrollY);
+            ctx.stroke();
+          }
+        });
+      });
+    }
+
+    window.addEventListener("resize", dibujarLineas);
+    window.addEventListener("load", () => {
+      actualizarEstadoVisual();
+      dibujarLineas();
+    });
+  </script>
+</body>
+</html>
 
